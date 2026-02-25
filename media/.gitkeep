@@ -1,0 +1,4 @@
+# This folder stores uploaded PDF drawings and processed annotated images.
+# Subdirectories:
+#   drawings/   - Original uploaded PDF files
+#   processed/  - OCR-annotated images with bounding boxes
