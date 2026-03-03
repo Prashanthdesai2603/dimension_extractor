@@ -4,7 +4,7 @@ import numpy as np
 from .vector_engine import extract_vector_text, has_vector_text
 from .doctr_engine import run_doctr_ocr
 from .grouping_engine import group_tokens
-from .validator import validate_dimensions
+from .dimension_validator import validate_dimension_candidates
 from pdf2image import convert_from_path
 
 def pdf_to_image(pdf_path: str, page_number: int = 0, dpi: int = 200) -> np.ndarray:
@@ -66,7 +66,7 @@ def process_drawing(pdf_path: str, output_image_path: str) -> dict:
         candidates = group_tokens(tokens)
         
         # Step 3: Validation and Filtering
-        valid_dimensions, noise_count = validate_dimensions(candidates, img_width, img_height)
+        valid_dimensions, noise_count = validate_dimension_candidates(candidates, img_width, img_height)
         
         # Step 4: Annotation (only valid dimensions)
         annotated_image = draw_annotations(cv_image, valid_dimensions)

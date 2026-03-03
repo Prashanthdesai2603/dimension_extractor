@@ -10,6 +10,7 @@ from .views import (
     DownloadDimensionsView,
     DetectDrawingView,
     ExtractDrawingView,
+    ExtractFromBoxesView,
     ExportDrawingView
 )
 
@@ -27,6 +28,9 @@ urlpatterns = [
 
     # POST /api/extract/ - Extract dimensions from provided bboxes
     path('extract/', ExtractDrawingView.as_view(), name='extract-drawing'),
+
+    # POST /api/extract_from_boxes/ - Extract from boxes and generate .txt download
+    path('extract_from_boxes/', ExtractFromBoxesView.as_view(), name='extract-from-boxes'),
 
     # POST /api/export/ - Save structured data and get download link
     path('export/', ExportDrawingView.as_view(), name='export-drawing'),

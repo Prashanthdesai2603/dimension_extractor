@@ -9,6 +9,7 @@ Endpoints:
 import os
 from django.conf import settings
 from django.http import HttpResponse, Http404
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -232,6 +233,110 @@ class ExtractDrawingView(APIView):
 
 
 # -----------------------------------------------------------------------
+# VIEW 5: Extract from Boxes and Export .txt
+# -----------------------------------------------------------------------
+
+class ExtractFromBoxesView(APIView):
+    """
+    POST /api/extract_from_boxes/
+
+    Frontend sends final box coordinates: [{x, y, width, height}, ...]
+    Backend:
+    - Crops regions from PDF
+    - Runs docTR OCR on each region
+    - Parses dimensions and tolerances
+    - Generates .txt file with format: Dim: 14.9; UTol: 0.02; LTol: -0.01
+    - Returns download URL
+    """
+    def post(self, request, *args, **kwargs):
+        try:
+            drawing_id = request.data.get('drawing_id')
+            rectangles = request.data.get('rectangles', [])
+
+            if not drawing_id:
+                return Response({'error': 'drawing_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            if not rectangles:
+                return Response({'error': 'At least one rectangle is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            try:
+                drawing = UploadedDrawing.objects.get(pk=drawing_id)
+            except UploadedDrawing.DoesNotExist:
+                return Response({'error': f'Drawing #{drawing_id} not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+            pdf_path = os.path.join(settings.MEDIA_ROOT, str(drawing.file))
+            
+            # Verify file exists
+            if not os.path.exists(pdf_path):
+                return Response({'error': f'PDF file not found on server at {pdf_path}'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Extract dimensions from the provided rectangles
+            dimensions = extract_dimensions_from_bboxes(pdf_path, rectangles)
+
+            # Filter:
+            #  - Manual boxes (is_manual=True) → always keep, even if dim is empty
+            #  - Auto-detected boxes → must have a real numeric dimension value
+            def is_valid_dim(d):
+                if d.get('is_manual'):
+                    return True   # always include manual rows
+                dim = str(d.get('dim', '') or '').strip()
+                if not dim or dim in ('0', 'null', 'undefined', 'None'):
+                    return False
+                return any(c.isdigit() for c in dim)
+
+            valid_dimensions = [d for d in dimensions if is_valid_dim(d)]
+
+            message = f'Extracted {len(valid_dimensions)} dimensions successfully.'
+            if not valid_dimensions:
+                message = 'No valid numeric dimensions found in the selected regions.'
+
+            # Generate .txt content
+            # Header
+            header = (
+                "Engineering Drawing Dimension Extractor\n"
+                "======================================\n"
+                f"Drawing ID : {drawing.id}\n"
+                f"File Name  : {os.path.basename(drawing.file.name)}\n"
+                f"Processed  : {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+                f"Total Dims : {len(valid_dimensions)}\n"
+                "======================================\n\n"
+                "EXTRACTED DIMENSIONS:\n"
+                "---------------------\n"
+            )
+
+            lines = []
+            for d in valid_dimensions:
+                line = format_structured_dimension({
+                    'dim': d['dim'],
+                    'utol': d['utol'],
+                    'ltol': d['ltol'],
+                    'serial': d.get('serial')
+                })
+                lines.append(line)
+
+            output_content = header + '\n'.join(lines)
+            drawing.extracted_text = output_content
+            drawing.save()
+
+            # Build absolute download URL
+            download_url = request.build_absolute_uri(f'/api/download/{drawing_id}/')
+
+            return Response({
+                'drawing_id': drawing_id,
+                'message': message,
+                'dimensions': valid_dimensions,
+                'download_url': download_url,
+                'file_content': output_content,
+                'dimension_count': len(valid_dimensions)
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            # Catch any unexpected errors and return the message to frontend
+            import traceback
+            traceback.print_exc()
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# -----------------------------------------------------------------------
 # VIEW 4: Export structured Dimensions
 # -----------------------------------------------------------------------
 
@@ -254,12 +359,25 @@ class ExportDrawingView(APIView):
             return Response({'error': 'Drawing not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         # Generate output text
+        # Header
+        header = (
+            "Engineering Drawing Dimension Extractor\n"
+            "======================================\n"
+            f"Drawing ID : {drawing.id}\n"
+            f"File Name  : {os.path.basename(drawing.file.name)}\n"
+            f"Processed  : {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}\n"
+            f"Total Dims : {len(dimensions)}\n"
+            "======================================\n\n"
+            "EXTRACTED DIMENSIONS:\n"
+            "---------------------\n"
+        )
+
         lines = []
         for d in dimensions:
             line = format_structured_dimension(d)
             lines.append(line)
         
-        output_content = '\n'.join(lines)
+        output_content = header + '\n'.join(lines)
         drawing.extracted_text = output_content
         drawing.save()
 

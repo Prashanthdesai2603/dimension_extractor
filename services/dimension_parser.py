@@ -5,13 +5,15 @@ from .tolerance_parser import parse_tolerance
 def extract_and_parse_dimensions(candidates: list, img_width: int = 0, img_height: int = 0) -> list:
     """
     Filters candidates for dimensions and parses them into structured objects.
-    Redesigned to be inclusive of all dimension types and orientations.
+    Ensures that we only return candidates that look like real dimensions.
     """
-    # Keep noise keywords but reduce them to essentials
+    # Strict noise keywords list to reject entire blocks
     NOISE_KEYWORDS = [
         'TITLE', 'DWG NO', 'SCALE', 'MATERIAL', 'REV', 'SHEET', 
         'DRAWN', 'CHECKED', 'APPROVED', 'DATE', 'WEIGHT',
-        'SIZE', 'DO NOT SCALE', 'COPYRIGHT'
+        'SIZE', 'DO NOT', 'COPYRIGHT', 'TOLERANCES', 'UNLESS',
+        'OTHERWISE', 'SPECIFIED', 'METRIC', 'INCH', 'MM',
+        'VIEW', 'ISOMETRIC', 'NOT TO SCALE', 'CAD MODEL', 'BASIC'
     ]
     
     structured_results = []
@@ -20,35 +22,38 @@ def extract_and_parse_dimensions(candidates: list, img_width: int = 0, img_heigh
         text = cand['text'].strip()
         bbox = cand['bbox']
         
-        # 1. Noise Keyword Check
-        if any(kw in text.upper() for kw in NOISE_KEYWORDS):
+        # 1. Basic Noise Filter (Reject if block contains these words)
+        text_upper = text.upper()
+        if any(kw in text_upper for kw in NOISE_KEYWORDS):
             continue
 
-        # 2. Pattern Match Check (Main Classification)
-        # We look for ANY dimension pattern in the combined text
+        # 2. Pattern Match Check
+        # We look for the strongest dimension pattern match
         match = re.search(COMBINED_PATTERN, text, re.IGNORECASE)
         
         if match:
-            # We take the found match or the whole text if it's primary dimension-like
-            dim_text = match.group(0).strip()
+            dim_candidate = match.group(0).strip()
             
-            # --- REDUCED FILTERING ---
-            # We no longer discard based on location (title block) 
-            # or aspect ratio unless it's extremely unlikely to be a dimension.
+            # 3. Digit Presence or prefix symbol check
+            if not any(char.isdigit() for char in dim_candidate):
+                continue
             
-            # 3. Basic Validation: must contain at least one digit
-            if not any(char.isdigit() for char in dim_text):
+            # Additional check: If it has too many words and NO prefix symbol, ignore it
+            # e.g. "PART NUMBER 123" should be ignored, but "Ø10" should stay.
+            words = text.split()
+            if len(words) > 3 and not any(sym in text for sym in ['Ø', 'R', 'Φ', 'ø', 'M', '±', '°']):
+                # Too many words, likely not a dimension callout
                 continue
 
-            # 4. Parse into components
-            parsed = parse_tolerance(dim_text)
+            # 4. Parse components using improved tolerance_parser
+            parsed = parse_tolerance(text) # Pass full text to let parser find the best part
             
             structured_results.append({
-                'original': text, # Use full text group for context
+                'original': text,
                 'dim': parsed['dim'],
                 'utol': parsed['utol'],
                 'ltol': parsed['ltol'],
-                'bbox': cand['bbox']
+                'bbox': bbox
             })
             
     return structured_results
