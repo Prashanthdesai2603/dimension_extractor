@@ -6,7 +6,7 @@ import React, { useState } from 'react';
  * Displays detected dimensions in an editable table.
  * Allows searching, filtering, editing, and deleting.
  */
-const DimensionTable = ({ dimensions, onUpdate, onDelete, onExport, isExporting }) => {
+const DimensionTable = ({ dimensions, onUpdate, onDelete, onExport, isExporting, onRowHighlight, highlightedId }) => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const filtered = (dimensions || []).filter(d => {
@@ -62,25 +62,44 @@ const DimensionTable = ({ dimensions, onUpdate, onDelete, onExport, isExporting 
                             <th className="py-3" style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>Dim</th>
                             <th className="py-3" style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>UTol</th>
                             <th className="py-3" style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>LTol</th>
+                            <th className="py-3" style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>Status</th>
                             <th className="pe-3 py-3 text-end" style={{ color: 'var(--color-text-muted)', fontWeight: 600 }}>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         {filtered.length === 0 ? (
                             <tr>
-                                <td colSpan="5" className="text-center py-5 text-muted italic">
+                                <td colSpan="6" className="text-center py-5 text-muted italic">
                                     No dimensions found. Try "Detect Dimensions".
                                 </td>
                             </tr>
                         ) : (
                             filtered.map((d, idx) => {
                                 const isEmpty = d.is_manual && (!d.dim || d.dim === '');
+                                const isHighlighted = d.id === highlightedId;
                                 const rowStyle = {
                                     borderBottom: '1px solid var(--color-border)',
-                                    background: isEmpty ? 'rgba(240,136,62,0.1)' : 'transparent',
+                                    background: isHighlighted ? 'rgba(31, 111, 235, 0.1)' : (isEmpty ? 'rgba(240,136,62,0.1)' : 'transparent'),
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s ease'
                                 };
+
+                                const getStatusBadge = (status) => {
+                                    switch (status) {
+                                        case 'AUTO': return <span className="status-badge auto">AUTO</span>;
+                                        case 'MANUAL': return <span className="status-badge manual">MANUAL</span>;
+                                        case 'LOW_CONF': return <span className="status-badge low-conf">LOW_CONF</span>;
+                                        default: return null;
+                                    }
+                                };
+
                                 return (
-                                    <tr key={idx} style={rowStyle}>
+                                    <tr
+                                        key={idx}
+                                        style={rowStyle}
+                                        onClick={() => onRowHighlight && onRowHighlight(d.id)}
+                                        className={isHighlighted ? 'highlight-row' : ''}
+                                    >
                                         <td className="ps-3 py-2">
                                             <div className="serial-badge">{d.serial || (idx + 1)}</div>
                                         </td>
@@ -92,6 +111,7 @@ const DimensionTable = ({ dimensions, onUpdate, onDelete, onExport, isExporting 
                                                 placeholder={isEmpty ? 'Type value…' : ''}
                                                 style={isEmpty ? { borderColor: 'rgba(240,136,62,0.5)' } : {}}
                                                 onChange={(e) => handleEdit(d.id, 'dim', e.target.value)}
+                                                onClick={(e) => e.stopPropagation()}
                                             />
                                         </td>
                                         <td className="py-2">
@@ -100,6 +120,7 @@ const DimensionTable = ({ dimensions, onUpdate, onDelete, onExport, isExporting 
                                                 className="table-input"
                                                 value={d.utol ?? '0'}
                                                 onChange={(e) => handleEdit(d.id, 'utol', e.target.value)}
+                                                onClick={(e) => e.stopPropagation()}
                                             />
                                         </td>
                                         <td className="py-2">
@@ -108,13 +129,20 @@ const DimensionTable = ({ dimensions, onUpdate, onDelete, onExport, isExporting 
                                                 className="table-input"
                                                 value={d.ltol ?? '0'}
                                                 onChange={(e) => handleEdit(d.id, 'ltol', e.target.value)}
+                                                onClick={(e) => e.stopPropagation()}
                                             />
+                                        </td>
+                                        <td className="py-2">
+                                            {getStatusBadge(d.status || (d.is_manual ? 'MANUAL' : 'AUTO'))}
                                         </td>
                                         <td className="pe-3 py-2 text-end">
                                             <button
                                                 className="btn btn-link link-danger p-0"
                                                 title="Delete"
-                                                onClick={() => onDelete(d.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onDelete(d.id);
+                                                }}
                                             >
                                                 🗑️
                                             </button>
@@ -132,9 +160,7 @@ const DimensionTable = ({ dimensions, onUpdate, onDelete, onExport, isExporting 
                     <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
                         Total: <strong>{(dimensions || []).length}</strong>
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-                        AI Confidence: <strong style={{ color: 'var(--color-accent-green)' }}>{(dimensions || []).length > 0 ? '94.2%' : '0%'}</strong>
-                    </span>
+
                 </div>
                 <span style={{ fontSize: '0.75rem', color: 'var(--color-text-accent)' }}>
                     Engineering Grade OCR v2
@@ -175,6 +201,31 @@ const DimensionTable = ({ dimensions, onUpdate, onDelete, onExport, isExporting 
                     font-size: 0.75rem;
                     font-weight: 700;
                     color: var(--color-text-primary);
+                }
+                .status-badge {
+                    font-size: 0.65rem;
+                    font-weight: 700;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    text-transform: uppercase;
+                }
+                .status-badge.auto {
+                    background: rgba(63, 185, 80, 0.15);
+                    color: #2da44e;
+                    border: 1px solid rgba(63, 185, 80, 0.3);
+                }
+                .status-badge.manual {
+                    background: rgba(31, 111, 235, 0.15);
+                    color: #0969da;
+                    border: 1px solid rgba(31, 111, 235, 0.3);
+                }
+                .status-badge.low-conf {
+                    background: rgba(212, 118, 59, 0.15);
+                    color: #bc4c00;
+                    border: 1px solid rgba(212, 118, 59, 0.3);
+                }
+                .highlight-row {
+                    border-left: 3px solid var(--color-accent-blue) !important;
                 }
             `}</style>
         </div>

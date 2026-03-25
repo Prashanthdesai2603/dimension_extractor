@@ -349,6 +349,59 @@ body {
   box-shadow: 0 6px 16px rgba(26, 127, 55, 0.35);
 }
 
+.btn-info-custom {
+  background: linear-gradient(135deg, #118ab2 0%, #39c5cf 100%);
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.92rem;
+  padding: 12px 28px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all var(--transition-fast);
+  box-shadow: 0 4px 12px rgba(17, 138, 178, 0.25);
+  font-family: var(--font-main);
+}
+
+.btn-info-custom:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(17, 138, 178, 0.35);
+}
+
+/* ---------- Manual Selection Button Active State ---------- */
+.btn-manual-active {
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%) !important;
+  border-color: #27ae60 !important;
+  color: #fff !important;
+  box-shadow: 0 0 12px rgba(46, 204, 113, 0.4),
+    0 4px 12px rgba(46, 204, 113, 0.25) !important;
+  animation: manual-pulse 2s infinite;
+}
+
+.btn-manual-active:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
+  border-color: #c0392b !important;
+  box-shadow: 0 0 12px rgba(231, 76, 60, 0.4),
+    0 4px 12px rgba(231, 76, 60, 0.25) !important;
+}
+
+@keyframes manual-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 8px rgba(46, 204, 113, 0.3),
+      0 4px 12px rgba(46, 204, 113, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 0 18px rgba(46, 204, 113, 0.5),
+      0 4px 16px rgba(46, 204, 113, 0.35);
+  }
+}
+
 /* ---------- Processing Spinner ---------- */
 .spinner-ring {
   width: 56px;

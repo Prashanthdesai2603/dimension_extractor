@@ -63,9 +63,15 @@ export const extractDimensions = (drawingId, rectangles) => {
  * Extract dimensions from boxes and trigger .txt export.
  * @param {number} drawingId
  * @param {Array} rectangles
+ * @param {Object} viewerContext
  */
-export const extractFromBoxes = (drawingId, rectangles) => {
-    return api.post('/api/extract_from_boxes/', { drawing_id: drawingId, rectangles });
+export const extractFromBoxes = (drawingId, rectangles, viewerContext, orientation = null) => {
+    return api.post('/api/extract_from_boxes/', {
+        drawing_id: drawingId,
+        rectangles: rectangles,
+        viewerContext: viewerContext,
+        orientation: orientation
+    });
 };
 
 /**

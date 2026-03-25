@@ -97,9 +97,9 @@ const UploadSection = ({ onUploadSuccess }) => {
                 setUploadProgress(pct);
             });
 
-            const { drawing_id, drawing } = response.data;
+            const { drawing_id, drawing, suggested_bboxes } = response.data;
             // Notify parent component of successful upload
-            onUploadSuccess(drawing_id, selectedFile.name, drawing.file_url);
+            onUploadSuccess(drawing_id, selectedFile.name, drawing.file_url, suggested_bboxes);
 
         } catch (err) {
             console.error('Upload error:', err);

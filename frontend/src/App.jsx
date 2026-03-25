@@ -7,7 +7,7 @@
  *   STEP 2 → Analysis: PDF Viewer + Structured Table + Export
  */
 
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './index.css';
 
@@ -35,16 +35,38 @@ const App = () => {
     // detectedBoxes: handles the visual rectangles for adjustment
     const [detectedBoxes, setDetectedBoxes] = useState([]);
 
+    // Highlighted dimension state
+    const [highlightedId, setHighlightedId] = useState(null);
+
+    // Manual Selection mode
+    const [manualSelectionMode, setManualSelectionMode] = useState(false);
+
+    // viewer state for coordinate transformation
+    const [viewerContext, setViewerContext] = useState({
+        viewerWidth: 0,
+        viewerHeight: 0,
+        pdfWidth: 0,
+        pdfHeight: 0,
+        zoomLevel: 1.0
+    });
+
     // ---- Callbacks ----
 
-    const handleUploadSuccess = (id, name, url) => {
+    const handleUploadSuccess = (id, name, url, suggestedBboxes) => {
         setDrawingId(id);
         // Use relative path for proxy compatibility
         const relativeUrl = url.replace(/^(?:https?:\/\/[^/]+)/i, '');
         setPdfUrl(relativeUrl);
         setStep(2);
-        // Automatically trigger detection on entering step 2
-        triggerAutoDetect(id);
+
+        // If we got bboxes from the upload response, use them immediately
+        if (suggestedBboxes && suggestedBboxes.length > 0) {
+            console.log("Using bboxes from upload:", suggestedBboxes.length);
+            setDetectedBoxes(suggestedBboxes);
+        } else {
+            // Fallback: manually trigger detection if none were returned
+            triggerAutoDetect(id);
+        }
     };
 
     const triggerAutoDetect = async (id) => {
@@ -67,14 +89,14 @@ const App = () => {
         }
     };
 
-    const handleExtract = async () => {
+    const handleExtractContent = async (orientation = null) => {
         if (!drawingId || isExtracting || (detectedBoxes && detectedBoxes.length === 0)) return;
 
         setIsExtracting(true);
         setError(null);
         try {
-            // NEW WORKFLOW: Call /api/extract_from_boxes/
-            const response = await extractFromBoxes(drawingId, detectedBoxes);
+            // Workflow: Send context and orientation hint to backend
+            const response = await extractFromBoxes(drawingId, detectedBoxes, viewerContext, orientation);
             console.log("Extract response:", response.data);
 
             // Populate the table with extracted results
@@ -131,7 +153,12 @@ const App = () => {
         setDimensions([]);
         setDetectedBoxes([]);
         setError(null);
+        setManualSelectionMode(false);
     };
+
+    const toggleManualSelection = useCallback(() => {
+        setManualSelectionMode(prev => !prev);
+    }, []);
 
     return (
         <div className="d-flex flex-column" style={{ minHeight: '100vh', background: 'var(--color-bg-primary)' }}>
@@ -195,9 +222,9 @@ const App = () => {
                                 <div className="viewer-toolbar mb-3 p-3 glass-card d-flex justify-content-between align-items-center">
                                     <div className="align-items-center gap-3 d-flex">
                                         <div className="status-indicator">
-                                            <div className={`status-dot ${isDetecting || isExtracting ? 'pulse' : 'active'}`} />
+                                            <div className={`status-dot ${isDetecting || isExtracting ? 'pulse' : manualSelectionMode ? 'manual' : 'active'}`} />
                                             <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>
-                                                {isDetecting ? 'AI Detecting...' : isExtracting ? 'Extracting...' : 'Drawing Ready'}
+                                                {isDetecting ? 'AI Detecting...' : isExtracting ? 'Extracting...' : manualSelectionMode ? 'Manual Selection Active' : 'Drawing Ready'}
                                             </span>
                                         </div>
                                     </div>
@@ -210,11 +237,36 @@ const App = () => {
                                             🔍 Detect Dimensions
                                         </button>
                                         <button
-                                            className="btn-primary-custom"
-                                            onClick={handleExtract}
+                                            className="btn-info-custom"
+                                            onClick={() => handleExtractContent('horizontal')}
                                             disabled={isDetecting || isExtracting || (detectedBoxes && detectedBoxes.length === 0)}
+                                            title="Extract only horizontal dimensions with 100% precision"
                                         >
-                                            ⚙️ {isExtracting ? 'Extracting...' : 'Extract Content'}
+                                            ↔ Horizontal
+                                        </button>
+                                        <button
+                                            className="btn-info-custom"
+                                            onClick={() => handleExtractContent('vertical')}
+                                            disabled={isDetecting || isExtracting || (detectedBoxes && detectedBoxes.length === 0)}
+                                            title="Extract only vertical dimensions with 100% precision"
+                                        >
+                                            ↕ Vertical
+                                        </button>
+                                        <button
+                                            className={`btn-secondary-custom ${manualSelectionMode ? 'btn-manual-active' : ''}`}
+                                            onClick={toggleManualSelection}
+                                            disabled={isDetecting || isExtracting}
+                                            title={manualSelectionMode ? 'Click to exit manual selection mode' : 'Click to draw rectangles around dimensions'}
+                                        >
+                                            {manualSelectionMode ? '✕ Cancel Selection' : '✛ Manual Selection'}
+                                        </button>
+                                        <button
+                                            className="btn-primary-custom"
+                                            onClick={() => handleExtractContent()}
+                                            disabled={isDetecting || isExtracting || (detectedBoxes && detectedBoxes.length === 0)}
+                                            title="Extract all dimensions (Horizontal + Vertical)"
+                                        >
+                                            🚀 {isExtracting ? 'Extracting...' : 'Full Extraction'}
                                         </button>
                                     </div>
                                 </div>
@@ -222,7 +274,11 @@ const App = () => {
                                     <DrawingViewer
                                         pdfUrl={pdfUrl}
                                         bboxes={detectedBoxes}
+                                        highlightedId={highlightedId}
                                         onBboxesChange={setDetectedBoxes}
+                                        onContextUpdate={setViewerContext}
+                                        manualSelectionMode={manualSelectionMode}
+                                        onManualSelectionDone={() => setManualSelectionMode(false)}
                                     />
                                 </div>
                             </div>
@@ -235,6 +291,8 @@ const App = () => {
                                 onUpdate={handleTableUpdate}
                                 onDelete={handleRowDelete}
                                 onExport={handleExport}
+                                onRowHighlight={(id) => setHighlightedId(id)}
+                                highlightedId={highlightedId}
                                 isExporting={isExporting}
                             />
                         </div>
@@ -247,7 +305,7 @@ const App = () => {
                 &nbsp;·&nbsp;
                 <span>© 2026 Dimension Extractor Tool</span>
                 &nbsp;·&nbsp;
-                <span>docTR AI Engine v2.0</span>
+                <span>PaddleOCR Engine v2.0</span>
             </footer>
 
             <style jsx>{`
@@ -271,6 +329,11 @@ const App = () => {
                 }
                 .status-dot.pulse {
                     background: var(--color-accent-orange);
+                    animation: pulse-glow 1s infinite alternate;
+                }
+                .status-dot.manual {
+                    background: #2ecc71;
+                    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
                     animation: pulse-glow 1s infinite alternate;
                 }
             `}</style>
