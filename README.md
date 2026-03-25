@@ -1,124 +1,93 @@
-# 📐 Engineering Drawing Dimension Extractor
+# 📐 Engineering Drawing Dimension Extractor (Full Guide)
 
-A state-of-the-art full-stack application designed to automate the extraction of dimensional data from engineering drawings (PDFs/Images). The system utilizes a hybrid OCR pipeline combining vector extraction and deep learning to achieve near-perfect accuracy.
+Welcome to the **Dimension Extractor** project. This is a production-grade internal tool designed to automate the extraction of dimensional data (Values, Units, Tolerances) from engineering drawings (PDFs/Scans).
 
----
-
-## 🚀 Project Overview
-
-Manually transcribing dimensions from technical drawings into Excel or inspection reports is labor-intensive and error-prone. This tool provides an automated workflow:
-1.  **Smart Detection**: Automatically identifies dimension regions using AI.
-2.  **Human-in-the-Loop**: Interactive canvas allows users to refine, rotate, and add bounding boxes.
-3.  **Advanced Extraction**: High-precision OCR extracts nominal values and tolerances.
-4.  **Structured Export**: Downloads a formatted `.txt` file ready for further processing.
+> [!TIP]
+> **View the Premium Guide**: For a better visual experience, open [Project_Explanation.html](Project_Explanation.html) in your browser.
 
 ---
 
-## 📂 Folder Structure & File Explanations
-
-The project is structured as a **Monorepo**, keeping the Frontend and Backend tightly coupled for consistency.
-
-### 🐍 Backend (Django)
-Located in `/backend`, the backend handles image processing, OCR, and data persistence.
-
-#### Key Files & Why They Exist:
-| File | Role | Why it's used |
-| :--- | :--- | :--- |
-| `extractor/views.py` | API Controller | Contains endpoints for upload, detection, extraction, and download. It orchestrates the flow. |
-| `extractor/models.py` | Database Schema | Defines the `UploadedDrawing` structure (file paths, timestamps, extracted text). |
-| `services/pipeline.py` | Main Engine | Coordinates the hybrid approach (trying vector extraction first, then docTR OCR). |
-| `services/doctr_engine.py` | Deep Learning OCR | Interfaces with the docTR library to read text from pixel data (ideal for scanned drawings). |
-| `services/vector_engine.py` | Vector Extraction | Uses PyMuPDF to extract "native" text from CAD-generated PDFs with 100% precision. |
-| `services/tolerance_parser.py` | Regex Parser | Specialized logic to split strings like `Ø50 +0.1/-0.2` into Nominal, Upper Tol, and Lower Tol. |
-| `services/bbox_detector.py` | AI Detection | Scans the whole drawing to suggest initial locations of dimensions. |
-| `manage.py` | Django CLI | The entry point for running the server, migrations, and shell commands. |
+## 🚀 1. The Core Objective (Start-to-End)
+Manual data entry from drawings is slow and error-prone. This tool provides a **5-step automated journey**:
+1.  **Upload**: User drops a PDF into the React portal.
+2.  **Detection**: The backend runs a **Hybrid Pipeline** (Vector Parsing or PaddleOCR) to find potential dimensions.
+3.  **Refine**: User interacts with a Konva.js canvas to adjust, add, or delete red bounding boxes.
+4.  **Extract**: The backend crops these specific boxes and runs a high-focus multi-orientation OCR to get the text.
+5.  **Export**: The text is parsed into structured chunks (Nominal, Upper Tol, Lower Tol) and exported as a `.txt` report.
 
 ---
 
-### ⚛️ Frontend (React)
-Located in `/frontend`, the frontend provides the interactive user experience.
+## 🛠️ 2. Technology Stack & Dependencies
 
-#### Key Files & Why They Exist:
-| File | Role | Why it's used |
-| :--- | :--- | :--- |
-| `src/App.jsx` | Main State Machine | Manages the 3-step workflow (Upload -> Adjust -> Export) and stores global app state. |
-| `src/api.js` | API client | Centralizes all Axios configurations/headers for communication with the Django backend. |
-| `src/components/DrawingViewer/` | Interactive Canvas | Built with Konva.js, this allows users to draw, move, and rotate boxes on top of the PDF image. |
-| `src/components/DataTable.jsx` | Data Grid | A spreadsheet-like UI for final review and editing of extracted values before export. |
-| `src/index.css` | Design System | Contains the premium styling (glassmorphism, dark mode, custom scrollbars). |
+### 🐍 Backend (Python / Django)
+| Dependency | Why & What is it used for? |
+| :--- | :--- |
+| **Django 4.2** | The "Skeleton". Handles the API, file storage (Media), and database interactions. |
+| **PaddleOCR** | The "Improved Eyes". A deep learning OCR engine that handles multi-orientation text and offers superior accuracy for technical drawings. |
+| **OpenCV** | The "Scalpel". Used to crop specific regions from the drawing for targeted processing and handles image pre-processing. |
+| **PyMuPDF (fitz)** | The "Perfect Reader". Directly extracts native text from CAD-generated PDFs with 100% precision. |
+| **pdf2image** | The "Bridge". Converts PDF pages into high-bitrate images so they can be viewed in browsers. |
+| **mysqlclient** | The "Memory". Connects Django to the MySQL database for persistent storage. |
 
----
-
-## 🛠️ Combined Setup Instructions
-
-### 1. Prerequisites
-- Python 3.9+
-- Node.js 16+
-- MySQL Server (for database persistence)
-
-### 2. Backend Setup
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Or venv\Scripts\activate on Windows
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-
-### 3. Frontend Setup
-```bash
-cd frontend
-npm install
-npm start
-```
+### ⚛️ Frontend (React / JavaScript)
+| Dependency | Why & What is it used for? |
+| :--- | :--- |
+| **React 18** | The "State". Manages the complex multi-step user flow without page reloads. |
+| **Konva / React-Konva** | The "Canvas". Allows drawing/moving red rectangles over the PDF image in real-time. |
+| **Axios** | The "Messenger". Handles all HTTP communication between the Frontend and Backend. |
+| **Bootstrap 5** | The "Style". Provides the layout components for a professional, responsive look. |
 
 ---
 
-## 🔄 Workflow Logic
+## 📂 3. Exhaustive File Breakdown
+
+### 📂 `backend/services/` (The Logic Layer)
+- `pipeline.py`: The Main Brain. Decides which tool (Vector vs PaddleOCR) to use for a specific file.
+- `vector_engine.py`: Specialized code to read "hidden" text inside digital PDFs.
+- `paddle_engine.py`: Loads the Paddle AI models and processes the image pixels with multi-rotation support (0°, 90°, 180°, 270°).
+- `grouping_engine.py`: Joins broken text tokens (e.g., if "20" and ".5" are separate, it makes "20.5").
+- `tolerance_parser.py`: Uses complex "Regex" patterns to split "50 ±0.1" into three data fields.
+- `bbox_detector.py`: Scans the whole page to suggest where dimensions might be.
+- `extractor.py`: Handles the final "Crop and Read" logic for user-adjusted boxes using PaddleOCR.
+
+### 📂 `backend/extractor/` (The API Layer)
+- `views.py`: Defines the URL endpoints (`/api/upload`, `/api/process`, etc.) that the frontend calls.
+- `models.py`: Defines the `UploadedDrawing` table in the database.
+- `serializers.py`: Converts database rows into JSON format for the web browser.
+
+### 📂 `frontend/src/` (The User Layer)
+- `App.jsx`: Global controller managing the Upload -> Process -> Result state.
+- `api.js`: Configuration for all backend API calls.
+- `components/DrawingViewer/`: Contains the logic for the interactive Konva canvas.
+- `components/ProcessSection.jsx`: The UI for the "Detecting..." phase with progress indicators.
+
+---
+
+## 🔄 4. How the "Magic" Works (The Processing Flow)
 
 ```mermaid
-sequenceDiagram
-    participant User
-    participant Frontend
-    participant Backend
-    participant OCR_Engine
-
-    User->>Frontend: Upload PDF
-    Frontend->>Backend: POST /api/upload/
-    Backend-->>Frontend: Returns ID
-    User->>Frontend: Click "Detect"
-    Frontend->>Backend: POST /api/detect/
-    Backend->>OCR_Engine: Full Page Scan
-    OCR_Engine-->>Backend: Coordinates [x,y,w,h]
-    Backend-->>Frontend: Returns Initial BBoxes
-    User->>Frontend: Manually Adjusts Boxes
-    User->>Frontend: Click "Extract Content"
-    Frontend->>Backend: POST /api/extract_from_boxes/ (Final BBoxes)
-    Backend->>OCR_Engine: Regional Crop OCR
-    OCR_Engine-->>Backend: Specific Text
-    Backend->>Backend: Parse Tolerances
-    Backend-->>Frontend: Return Structured Data & Download URL
+graph TD
+    A[User Uploads PDF] --> B{Is it a Vector PDF?}
+    B -- Yes --> C[PyMuPDF Vector Extraction]
+    B -- No --> D[PaddleOCR Deep Learning Engine]
+    C --> E[Spatial Grouping Engine]
+    D --> E
+    E --> F[Heuristic Noise Filter]
+    F --> G[Display Boxes in React Canvas]
+    G --> H[User Refines Boxes]
+    H --> I[OpenCV Targeted Crop]
+    I --> J[Paddle Multi-Orientation OCR]
+    J --> K[Text Parsing & Tolerance Logic]
+    K --> L[Generate Final .txt Export]
 ```
 
 ---
 
-## ❓ Why "One Common File"? (Monorepo Choice)
-
-You may notice the project resides in a single directory rather than separate repositories. This is intentional:
-
-1.  **Coordination**: The Frontend (Canvas) and Backend (Image Cropping) must use the same "Coordinate Language". Keeping them together ensures changes in the coordinate math are always synchronized.
-2.  **Simplified Context**: For a single engineer or a small team, a monorepo eliminates the "version mismatch" between the UI and the API.
-3.  **unified Documentation**: We provide a "Common Document" (`Project_Explanation.html`) that serves as a single source of truth for the entire project's architecture, including both frontend and backend details.
-4.  **Deployment Atomic**: When you push a feature, you push the UI and the Engine logic at the exact same time, ensuring the system never breaks due to partial updates.
+## 🚀 5. Getting Started
+1.  **Backend**: `cd backend && pip install -r requirements.txt && python manage.py runserver`
+2.  **Frontend**: `cd frontend && npm install && npm start`
+3.  **Database**: Ensure MySQL is running and credentials are set in `backend/.env`.
 
 ---
-
-## 📜 Technology Stack
-- **AI/ML**: docTR (Document Text Recognition), PyTorch/TensorFlow.
-- **Vision**: OpenCV, PyMuPDF, Pillow.
-- **Backend**: Django, Django REST Framework, MySQL.
-- **Frontend**: React, Konva (Canvas), Lucide Icons, Smooth Animations.
-
----
-*Created for Engineering Intelligence Teams.*
+*Updated to reflect the implementation of PaddleOCR for superior dimensional extraction.*
+*Created for the Engineering Intelligence Team.*

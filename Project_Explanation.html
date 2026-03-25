@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dimension Extractor – Full Project Transparency</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+        :root {
+            --primary: #2563eb;
+            --primary-light: #dbeafe;
+            --secondary: #0f172a;
+            --accent: #06b6d4;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #334155;
+            --text-dark: #0f172a;
+            --border: #e2e8f0;
+            --code-bg: #1e293b;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        /* Hero Header */
+        header {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 80px 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        header h1 {
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            margin-bottom: 16px;
+            background: linear-gradient(to right, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        header p {
+            font-size: 18px;
+            color: #94a3b8;
+            max-width: 600px;
+            font-weight: 400;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            background: rgba(37, 99, 235, 0.1);
+            color: #60a5fa;
+            border: 1px solid rgba(37, 99, 235, 0.3);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 24px;
+        }
+
+        /* Main Content */
+        main {
+            padding: 60px;
+        }
+
+        section {
+            margin-bottom: 80px;
+        }
+
+        .section-tag {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        h2 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        h2::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        p {
+            margin-bottom: 20px;
+        }
+
+        /* Features/Workflow Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
+        }
+
+        .card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            padding: 24px;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card p {
+            font-size: 14px;
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        .icon-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        /* Tech Stack Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        th {
+            background: #f1f5f9;
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        td {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            font-size: 14px;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) {
+            background: #fcfdfe;
+        }
+
+        .tech-name {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        /* File List */
+        .file-list {
+            list-style: none;
+        }
+
+        .file-item {
+            display: flex;
+            padding: 12px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .file-path {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--secondary);
+            width: 250px;
+            flex-shrink: 0;
+        }
+
+        .file-desc {
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        /* Code Block */
+        pre {
+            background: var(--code-bg);
+            color: #e2e8f0;
+            padding: 24px;
+            border-radius: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+
+        .hl-comment {
+            color: #64748b;
+        }
+
+        .hl-keyword {
+            color: #38bdf8;
+        }
+
+        .hl-string {
+            color: #4ade80;
+        }
+
+        /* Workflow Steps */
+        .stepper {
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .stepper::before {
+            content: "";
+            position: absolute;
+            left: 17px;
+            top: 10px;
+            bottom: 10px;
+            width: 2px;
+            background: var(--primary-light);
+        }
+
+        .step {
+            position: relative;
+            margin-bottom: 40px;
+        }
+
+        .step::before {
+            content: "";
+            position: absolute;
+            left: -32px;
+            top: 4px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--primary);
+            border: 4px solid var(--card-bg);
+            box-shadow: 0 0 0 2px var(--primary);
+            z-index: 1;
+        }
+
+        .step-title {
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            font-size: 18px;
+        }
+
+        .step-content {
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        /* STAR Method Styles */
+        .star-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .star-item {
+            display: flex;
+            gap: 20px;
+            background: #ffffff;
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+            transition: all 0.3s ease;
+        }
+
+        .star-item:hover {
+            transform: translateX(10px);
+            border-color: var(--primary);
+        }
+
+        .star-letter {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: var(--primary);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            flex-shrink: 0;
+        }
+
+        .star-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .star-content p {
+            font-size: 14px;
+            color: var(--text-main);
+            margin: 0;
+        }
+
+        /* Footer */
+        footer {
+            background: #f1f5f9;
+            padding: 40px 60px;
+            text-align: center;
+            font-size: 14px;
+            color: #64748b;
+            border-top: 1px solid var(--border);
+        }
+
+        @media (max-width: 768px) {
+
+            header,
+            main,
+            footer {
+                padding: 30px;
+            }
+
+            .file-path {
+                width: 100%;
+                margin-bottom: 4px;
+            }
+
+            .file-item {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- ============ HEADER ============ -->
+        <header>
+            <span class="badge">Internal Technical Documentation</span>
+            <h1>Engineering Drawing<br>Dimension Extractor</h1>
+            <p>A comprehensive guide to the architecture, logic, and implementation of the AI-powered dimension
+                processing system.</p>
+        </header>
+
+        <!-- ============ MAIN CONTENT ============ -->
+        <main>
+            <!-- 1. EXECUTIVE SUMMARY -->
+            <section id="summary">
+                <span class="section-tag">01. Overview</span>
+                <h2>What is this Project?</h2>
+                <p>
+                    The <strong>Dimension Extractor</strong> is a high-precision tools designed to solve a critical
+                    engineering pain point: the manual transcription of measurement data from technical PDF drawings.
+                    It transforms static drawings into <strong>structured digital data</strong> by combining modern
+                    Computer Vision, Deep Learning, and Vector Geometry.
+                </p>
+                <div class="grid">
+                    <div class="card">
+                        <h3>
+                            <div class="icon-circle">1</div> Modern Pipeline
+                        </h3>
+                        <p>Uses a "Hybrid Engine" that perfectly parses native CAD PDFs while using Deep Learning for
+                            scanned paper drawings.</p>
+                    </div>
+                    <div class="card">
+                        <h3>
+                            <div class="icon-circle">2</div> Interactive UX
+                        </h3>
+                        <p>Allows human engineers to verify and edit detection boxes on an interactive canvas before
+                            final extraction.</p>
+                    </div>
+                    <div class="card">
+                        <h3>
+                            <div class="icon-circle">3</div> Industrial Grade
+                        </h3>
+                        <p>Understands complex engineering notations like Ø (diameter), ± (tolerances), and multi-line
+                            callouts.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STAR METHOD SECTION -->
+            <section id="star-method">
+                <span class="section-tag">STAR Approach</span>
+                <h2>The STAR Methodology</h2>
+                <div class="star-container">
+                    <div class="star-item">
+                        <div class="star-letter">S</div>
+                        <div class="star-content">
+                            <h4>Situation</h4>
+                            <p>Engineers manually scanning PDF drawings to extract dimensions like <code>25.4 mm</code>,
+                                <code>Ø50</code>, or <code>100 ± 0.5</code>. This process is highly inefficient,
+                                labor-intensive, and prone to human transcription errors.</p>
+                        </div>
+                    </div>
+                    <div class="star-item">
+                        <div class="star-letter">T</div>
+                        <div class="star-content">
+                            <h4>Task</h4>
+                            <p>Develop a robust, high-precision automated system capable of detecting, highlighting, and
+                                digitizing dimensional data from both native CAD PDFs and legacy scanned drawings.</p>
+                        </div>
+                    </div>
+                    <div class="star-item">
+                        <div class="star-letter">A</div>
+                        <div class="star-content">
+                            <h4>Action</h4>
+                            <p>Engineered a <strong>Hybrid OCR Pipeline</strong> combining PyMuPDF for vector accuracy
+                                with <strong>PaddleOCR Deep Learning</strong> for scans. Implemented a <strong>Konva.js
+                                    Interactive Canvas</strong> for manual refinements and logic for tolerance parsing
+                                using multi-orientation rotation testing (0°, 90°, 180°, 270°).</p>
+                        </div>
+                    </div>
+                    <div class="star-item">
+                        <div class="star-letter">R</div>
+                        <div class="star-content">
+                            <h4>Result</h4>
+                            <p>Achieved a unified platform for dimension extraction that ensures 100% confidence through
+                                <strong>Human-in-the-Loop</strong> validation, dramatically reducing manual overhead and
+                                providing clean, structured digital data.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. WORKFLOW -->
+            <section id="workflow">
+                <span class="section-tag">02. Data Journey</span>
+                <h2>Start-to-End Workflow</h2>
+                <div class="stepper">
+                    <div class="step">
+                        <div class="step-title">1. Intake & Standardisation</div>
+                        <div class="step-content">
+                            User uploads a PDF. The backend immediately converts the first page into a high-resolution
+                            (200 DPI)
+                            image using <code>pdf2image</code> to ensure visual consistency between the browser and the
+                            AI model.
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-title">2. Hybrid Detection (The "Smart" Part)</div>
+                        <div class="step-content">
+                            The system analyzes the PDF. If it's a <strong>Vector PDF</strong> (generated by CAD), it
+                            extracts text directly
+                            from the file's internal code. If it's a <strong>Scan</strong>, it activates <strong>PaddleOCR
+                                (Deep Learning)</strong>
+                            to "read" the pixels using multi-rotation detection.
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-title">3. Spatial Grouping & Validation</div>
+                        <div class="step-content">
+                            Isolated pieces of text like "25.0" and "±0.1" are geographically merged.
+                            Heuristics then filter out "Noise" (like company logos, title blocks, or material names)
+                            so only actual measurements remain.
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-title">4. Human Verification</div>
+                        <div class="step-content">
+                            The detected boxes appear on the React frontend. The user can move, resize, or add new
+                            boxes.
+                            This "Human-in-the-Loop" step ensures 100% accuracy for critical industrial tasks.
+                        </div>
+                    </div>
+                    <div class="step">
+                        <div class="step-title">5. Structured Export</div>
+                        <div class="step-content">
+                            Final boxes are sent back to the server. The server crops each tiny region, performs a final
+                            "High-Focus OCR",
+                            parses the result into Nominal and Tolerance values, and generates a formatted
+                            <code>.txt</code> report.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. TECHNOLOGY DEEP DIVE -->
+            <section id="tech">
+                <span class="section-tag">03. Technology Stack</span>
+                <h2>Why These Technologies?</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Technology</th>
+                            <th>Role</th>
+                            <th>The "Why"</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="tech-name">PaddleOCR</td>
+                            <td>Deep Learning OCR</td>
+                            <td>Designed for precision in industrial documents. Unlike other engines, PaddleOCR excels at reading
+                                horizontal and vertical text using advanced multi-orientation analysis (0° to 270°).</td>
+                        </tr>
+                        <tr>
+                            <td class="tech-name">OpenCV</td>
+                            <td>Computer Vision</td>
+                            <td>Handles the "image math": cropping regions from the drawing, scaling coordinates, and
+                                drawing the visual highlights for the UI.</td>
+                        </tr>
+                        <tr>
+                            <td class="tech-name">PyMuPDF</td>
+                            <td>Vector Engine</td>
+                            <td>Lightning-fast. It "talks" directly to the PDF's internal vector stream, allowing 100%
+                                perfect extraction without any AI errors for modern CAD files.</td>
+                        </tr>
+                        <tr>
+                            <td class="tech-name">React + Konva</td>
+                            <td>Interactive UI</td>
+                            <td>Konva is a "Canvas" library. It allows us to render thousands of red boxes on top of a
+                                drawing while keeping the interface smooth and responsive.</td>
+                        </tr>
+                        <tr>
+                            <td class="tech-name">Django</td>
+                            <td>Robust Backend</td>
+                            <td>Provides the secure structure needed for file handling, database persistence (MySQL),
+                                and the RESTful API endpoints.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- 4. FILE BY FILE EXPLANATION -->
+            <section id="files">
+                <span class="section-tag">04. Codebase Anatomy</span>
+                <h2>File-by-File Breakdown</h2>
+
+                <h3 style="font-size: 16px; margin: 20px 0 10px; color: var(--primary);">Backend: The Intelligence Core
+                </h3>
+                <ul class="file-list">
+                    <li class="file-item">
+                        <div class="file-path">services/pipeline.py</div>
+                        <div class="file-desc">The "Orchestrator". It decides whether to use Vector or OCR paths and
+                            coordinates the flow from image conversion to final saving.</div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-path">services/vector_engine.py</div>
+                        <div class="file-desc">Uses PyMuPDF to extract text from native PDFs. Handles rotation detection
+                            and scaling text to the current image DPI.</div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-path">services/paddle_engine.py</div>
+                        <div class="file-desc">The AI bridge. It initializes the Paddle AI model and processes image pixels with
+                            multi-orientation rotation support to handle vertical dimensions.</div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-path">services/grouping_engine.py</div>
+                        <div class="file-desc">Geometric logic to merge adjacent text tokens. (e.g., if "20" is next to
+                            ".5", it merges them into "20.5").</div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-path">services/tolerance_parser.py</div>
+                        <div class="file-desc">Strict linguistic logic. Uses Regex to split complex strings like
+                            "Ø10H7(+0.015/0)" into structured data.</div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-path">extractor/views.py</div>
+                        <div class="file-desc">The API Gateway. Links the frontend requests (Upload, Detect, Extract) to
+                            the internal processing services.</div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-path">extractor/models.py</div>
+                        <div class="file-desc">Database schema. Tells MySQL how to store drawing files, extracted text,
+                            and processing status.</div>
+                    </li>
+                </ul>
+
+                <h3 style="font-size: 16px; margin: 30px 0 10px; color: var(--primary);">Frontend: The User Interface
+                </h3>
+                <ul class="file-list">
+                    <li class="file-item">
+                        <div class="file-path">src/App.jsx</div>
+                        <div class="file-desc">The root controller. Manages the overall app state (which page are we on:
+                            Uploading, Processing, or Reviewing?)</div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-path">src/api.js</div>
+                        <div class="file-desc">Centralized communication. Contains all the Axios calls that send data to
+                            the Django server.</div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-path">components/DrawingViewer/</div>
+                        <div class="file-desc">The most complex component. Uses Konva.js to create the interactive PDF
+                            overlay functionality.</div>
+                    </li>
+                    <li class="file-item">
+                        <div class="file-path">components/DataTable.jsx</div>
+                        <div class="file-desc">A spreadsheet-like grid for reviewing the extracted values before you
+                            download the final report.</div>
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 5. HOW IT WORKS EXAMPLES -->
+            <section id="how-it-works">
+                <span class="section-tag">05. Technical Logic</span>
+                <h2>How does it actually work?</h2>
+                <p>Below is a simplified look at the "Linguistic Reasoning" inside the extractor:</p>
+                <div class="grid">
+                    <div class="card" style="background: var(--code-bg); color: #fff; border: none;">
+                        <h3 style="color: #60a5fa;">The Regex Strategy</h3>
+                        <p style="color: #94a3b8; font-family: 'JetBrains Mono', monospace; font-size: 12px;">
+                            <span class="hl-keyword">if</span> match(r'<span class="hl-string">^[ØR]\d+</span>',
+                            text):<br>
+                            &nbsp;&nbsp;mark_as_important()<br>
+                            <span class="hl-comment"># We filter out "123" (could be a serial)</span><br>
+                            <span class="hl-comment"># We keep "Ø123" (definitely a dimension)</span>
+                        </p>
+                    </div>
+                </div>
+                <p style="margin-top: 30px;">
+                    <strong>OpenCV's Role:</strong> When you draw a box on the screen, the frontend sends
+                    <code>{x, y, w, h}</code>.
+                    The backend uses OpenCV to "Crop" that exact rectangle from the Original High-Res image, applies a
+                    grayscale filter to enhance contrast,
+                    and then feeds this small, clean image to PaddleOCR. This "Targeted OCR" approach is 10x more accurate
+                    than scanning the whole page at once, especially for technical fonts.
+                </p>
+            </section>
+        </main>
+
+        <!-- ============ FOOTER ============ -->
+        <footer>
+            <p>© 2026 Engineering Intelligence Team • Created for Product Lifecycle Clarity</p>
+            <p style="margin-top: 8px; font-size: 12px;">Powered by <strong>Django</strong>, <strong>PaddleOCR</strong>, and
+                <strong>React</strong>.
+            </p>
+        </footer>
+    </div>
+</body>
+
+</html>
