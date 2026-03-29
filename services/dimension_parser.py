@@ -41,7 +41,7 @@ def extract_and_parse_dimensions(candidates: list, img_width: int = 0, img_heigh
             # Additional check: If it has too many words and NO prefix symbol, ignore it
             # e.g. "PART NUMBER 123" should be ignored, but "Ø10" should stay.
             words = text.split()
-            if len(words) > 3 and not any(sym in text for sym in ['Ø', 'R', 'Φ', 'ø', 'M', '±', '°']):
+            if len(words) > 5 and not any(sym in text_upper for sym in ['Ø', 'R', 'Φ', 'ø', 'M', '±', '°', 'TYP', 'MAX', 'MIN', 'THK', 'PLCS']):
                 # Too many words, likely not a dimension callout
                 continue
 

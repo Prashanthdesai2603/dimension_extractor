@@ -4,8 +4,10 @@ import numpy as np
 from pdf2image import convert_from_path
 from .model_loader import get_ocr_model
 from .tolerance_parser import parse_tolerance
+import logging
+logger = logging.getLogger(__name__)
 
-def extract_dimensions_from_bboxes(pdf_path: str, rectangles: list) -> list:
+def extract_dimensions_from_bboxes(pdf_path: str, rectangles: list, viewer_context: dict = None) -> list:
     """
     For each rectangle:
     1. Crop region from image
@@ -28,6 +30,12 @@ def extract_dimensions_from_bboxes(pdf_path: str, rectangles: list) -> list:
         img_h, img_w = cv_image.shape[:2]
         
         ocr_model = get_ocr_model()
+        
+        # Optional: Use viewer_context to verify/adjust scaling if needed
+        # Current frontend sends coordinates already scaled to 200 DPI
+        if viewer_context:
+            logger.info("[Extractor] Received viewer_context: %s", viewer_context)
+        
         results = []
         
         for rect in rectangles:

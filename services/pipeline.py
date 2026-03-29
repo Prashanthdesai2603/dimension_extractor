@@ -1,11 +1,16 @@
+import logging
 import os
+
 import cv2
 import numpy as np
-from .vector_engine import extract_vector_text, has_vector_text
-from .doctr_engine import run_doctr_ocr
+
+from .paddle_engine import run_paddle_ocr
 from .grouping_engine import group_tokens
 from .dimension_validator import validate_dimension_candidates
+from .vector_engine import extract_vector_text, has_vector_text
 from pdf2image import convert_from_path
+
+logger = logging.getLogger(__name__)
 
 def pdf_to_image(pdf_path: str, page_number: int = 0, dpi: int = 200) -> np.ndarray:
     """
@@ -36,31 +41,23 @@ def process_drawing(pdf_path: str, output_image_path: str) -> dict:
         method = "OCR"
 
         if is_vector:
-            print(f"[Pipeline] Vector text detected in {pdf_path}")
-            # Vector extract
-            raw_vector_tokens = extract_vector_text(pdf_path)
-            # Standardize vector tokens to match our internal format
-            # PyMuPDF coords are in points, image is in pixels (DPI=200)
-            # 1 point = 1/72 inch. At 200 DPI, 1 point = 200/72 pixels ≈ 2.77 pixels
-            scale = 200 / 72.0
-            
+            logger.info("[Pipeline] Vector text detected in %s", pdf_path)
+            # extract_vector_text() already returns bboxes scaled to dpi=200
+            # pixel space — do NOT multiply by scale again (that was a bug).
+            raw_vector_tokens = extract_vector_text(pdf_path, dpi=200)
             for vt in raw_vector_tokens:
                 tokens.append({
-                    'text': vt['text'],
-                    'bbox': (
-                        vt['bbox'][0] * scale,
-                        vt['bbox'][1] * scale,
-                        vt['bbox'][2] * scale,
-                        vt['bbox'][3] * scale
-                    )
+                    'text':   vt['text'],
+                    'bbox':   vt['bbox'],   # already in 200-DPI pixels
+                    'method': 'vector',
                 })
             method = "Vector"
         
-        # Fallback to OCR if vector extraction returned nothing or if it's a scan
+        # Fallback to OCR if vector extraction returned nothing or it is a scan
         if not tokens:
-            print(f"[Pipeline] Falling back to docTR OCR for {pdf_path}")
-            tokens = run_doctr_ocr(pdf_path, img_width, img_height)
-            method = "docTR"
+            logger.info("[Pipeline] Falling back to PaddleOCR for %s", pdf_path)
+            tokens = run_paddle_ocr(cv_image)
+            method = "PaddleOCR"
 
         # Step 2: Grouping
         candidates = group_tokens(tokens)
@@ -88,17 +85,15 @@ def process_drawing(pdf_path: str, output_image_path: str) -> dict:
             'error': None
         }
 
-    except Exception as e:
-        print(f"[Pipeline] Error: {e}")
-        import traceback
-        traceback.print_exc()
+    except Exception as exc:
+        logger.exception("[Pipeline] Unhandled error: %s", exc)
         return {
-            'success': False,
-            'dimensions': [],
+            'success':        False,
+            'dimensions':     [],
             'total_detected': 0,
             'valid_dimensions': 0,
             'filtered_noise': 0,
-            'error': str(e)
+            'error':          str(exc)
         }
 
 def draw_annotations(cv_image: np.ndarray, dimensions: list) -> np.ndarray:

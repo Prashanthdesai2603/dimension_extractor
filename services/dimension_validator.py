@@ -54,8 +54,8 @@ def validate_dimension_candidates(candidates: list, img_width: int, img_height: 
             noise += 1
             continue
 
-        # 3. Word count — dimensions are short (≤ 4 words)
-        if len(text.split()) > 4:
+        # 3. Word count — dimensions are short (≤ 6 words)
+        if len(text.split()) > 6:
             noise += 1
             continue
 

@@ -6,6 +6,7 @@ Endpoints:
     POST /api/process/<id>/     - Process drawing with OCR
     GET  /api/download/<id>/    - Download extracted dimensions as .txt
 """
+import logging
 import os
 from django.conf import settings
 from django.http import HttpResponse, Http404
@@ -16,6 +17,8 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
 
 from .models import UploadedDrawing
+
+logger = logging.getLogger(__name__)
 from .serializers import UploadedDrawingSerializer
 from services.pipeline import process_drawing
 from services.bbox_detector import detect_bounding_boxes
@@ -65,6 +68,14 @@ class UploadDrawingView(APIView):
             # Create a new UploadedDrawing record
             drawing = UploadedDrawing.objects.create(file=uploaded_file)
 
+            # Auto-detect bounding boxes immediately on upload
+            pdf_path = os.path.join(settings.MEDIA_ROOT, str(drawing.file))
+            try:
+                suggested_bboxes = detect_bounding_boxes(pdf_path)
+            except Exception as e:
+                logger.warning(f"Initial detection failed for {drawing.id}: {e}")
+                suggested_bboxes = []
+
             serializer = UploadedDrawingSerializer(
                 drawing,
                 context={'request': request}
@@ -72,9 +83,10 @@ class UploadDrawingView(APIView):
 
             return Response(
                 {
-                    'message': 'PDF uploaded successfully.',
+                    'message': 'PDF uploaded and dimensions detected successfully.',
                     'drawing_id': drawing.id,
                     'drawing': serializer.data,
+                    'suggested_bboxes': suggested_bboxes
                 },
                 status=status.HTTP_201_CREATED
             )
@@ -221,9 +233,10 @@ class ExtractDrawingView(APIView):
             return Response({'error': 'Drawing not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         pdf_path = os.path.join(settings.MEDIA_ROOT, str(drawing.file))
+        orientation = request.data.get('orientation')
         
         # Run extraction engine
-        dimensions = extract_dimensions_from_bboxes(pdf_path, rectangles)
+        dimensions = extract_dimensions_from_bboxes(pdf_path, rectangles, orientation=orientation)
 
         print(f"[Extract Response] ID: {drawing_id}, Results: {dimensions}")
         return Response({
@@ -252,6 +265,7 @@ class ExtractFromBoxesView(APIView):
         try:
             drawing_id = request.data.get('drawing_id')
             rectangles = request.data.get('rectangles', [])
+            viewer_context = request.data.get('viewerContext')
 
             if not drawing_id:
                 return Response({'error': 'drawing_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -265,13 +279,14 @@ class ExtractFromBoxesView(APIView):
                 return Response({'error': f'Drawing #{drawing_id} not found.'}, status=status.HTTP_404_NOT_FOUND)
 
             pdf_path = os.path.join(settings.MEDIA_ROOT, str(drawing.file))
+            orientation = request.data.get('orientation')
             
             # Verify file exists
             if not os.path.exists(pdf_path):
                 return Response({'error': f'PDF file not found on server at {pdf_path}'}, status=status.HTTP_404_NOT_FOUND)
 
             # Extract dimensions from the provided rectangles
-            dimensions = extract_dimensions_from_bboxes(pdf_path, rectangles)
+            dimensions = extract_dimensions_from_bboxes(pdf_path, rectangles, viewer_context=viewer_context, orientation=orientation)
 
             # Filter:
             #  - Manual boxes (is_manual=True) → always keep, even if dim is empty

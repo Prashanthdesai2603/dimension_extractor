@@ -16,8 +16,13 @@ Fallback (raster / scanned PDFs):
 """
 
 import re
+import cv2
+import logging
+import numpy as np
 from .vector_engine import has_vector_text, extract_vector_text
-from .doctr_engine import run_doctr_ocr
+
+logger = logging.getLogger(__name__)
+from .paddle_engine import run_paddle_ocr
 from .grouping_engine import group_tokens
 from .dimension_parser import extract_and_parse_dimensions
 from .dimension_validator import validate_dimension_candidates
@@ -52,8 +57,14 @@ _DIM_REGEXES = [
     # THK spec: 1.0 THK or 0.5mm THK
     r'^\d+(?:[.,]\d+)?\s*(?:mm|in)?\s*THK$',
 
-    # Reference dims in parens: (50.0)
-    r'^\(\s*\d+(?:[.,]\d+)?\s*\)$',
+    # Generic dimension with prefix/suffix: 4x Ø10 TYP, 2 HOLES R5
+    r'^(?:\d+\s*[xX]\s*|[ØRΦøM]\s*)?\d+(?:[.,]\d+)?(?:\s*[±\+]\s*\d+(?:[.,]\d+)?)?\s*(?:TYP|MAX|MIN|REF|THK|PLCS|HOLES|HOLE|SQ)*$',
+
+    # Dimensions separated by 'x' or '*' e.g. 50x30, 10*20
+    r'\d+(?:\.\d+)?\s*[xX*×]\s*\d+(?:\.\d+)?',
+
+    # Reference dims in parens or brackets: (50.0), [50.0]
+    r'^[(\[]\s*\d+(?:[.,]\d+)?\s*[)\]]$',
 ]
 
 # Combine into one pattern that tries each
@@ -88,18 +99,28 @@ def _is_clean_dimension(text: str) -> bool:
     t_up = t.upper()
     if any(phrase in t_up for phrase in _NOISE_PHRASES):
         return False
-    # Reject long strings (4+ words)
+    # Reject long strings (dimension callouts are almost never > 6 words)
     words = t.split()
-    if len(words) >= 5:
+    if len(words) >= 7:
         return False
+    
     # Try strict pattern match first
     if _COMBINED.match(t):
         return True
-    # Relaxed: short text (≤3 tokens) where majority is numeric/symbol
+    
+    # Relaxed: short text where majority is numeric/symbol
+    # We remove expected symbols and check if anything alphabetic is left
     alpha_only = re.sub(r'[\d\s\.\+\-±°ØRΦøM×x/()\[\]]', '', t)
-    num_digits  = sum(c.isdigit() for c in t)
-    if len(words) <= 3 and num_digits >= 1 and len(alpha_only) <= 3:
+    # Remove common abbreviations from the alpha check
+    for abbr in ['TYP', 'MAX', 'MIN', 'THK', 'PLCS', 'PLS', 'SQ', 'REF', 'HOLES', 'HOLE']:
+        alpha_only = re.sub(rf'\b{abbr}\b', '', alpha_only, flags=re.IGNORECASE)
+
+    num_digits = sum(c.isdigit() for c in t)
+    
+    # Permissive density check
+    if len(words) <= 5 and num_digits >= 1 and len(alpha_only) <= 6:
         return True
+        
     return False
 
 
@@ -144,13 +165,14 @@ def _detect_vector(pdf_path: str, img_w: int, img_h: int) -> list:
     NOTES_X = img_w * 0.45
 
     # ----- Font-size threshold -----
+    # Relaxed: dimensions can be smaller than we think. 
+    # Only filter out absolute micro-text (revision clouds, title block fine print).
     sizes = [t['size'] for t in tokens if t['size'] > 0]
     if sizes:
         sizes.sort()
-        # Use the 60th-percentile size as the "body text" reference
-        ref_size = sizes[int(len(sizes) * 0.6)]
-        # Dimensions are usually rendered at >= 60% of the dominant body size
-        min_size = ref_size * 0.55
+        # Use a more permissive percentile for reference
+        ref_size = sizes[int(len(sizes) * 0.4)]
+        min_size = ref_size * 0.45
     else:
         min_size = 0
 
@@ -215,12 +237,10 @@ def _detect_vector(pdf_path: str, img_w: int, img_h: int) -> list:
     return results
 
 
-# ---------------------------------------------------------------------------
-# OCR / raster path  (unchanged from original logic)
-# ---------------------------------------------------------------------------
-
 def _detect_ocr(pdf_path: str, img_w: int, img_h: int, pil_image) -> list:
-    tokens = run_doctr_ocr(pdf_path, img_w, img_h)
+    # Convert PIL to CV image (BGR) for PaddleOCR
+    cv_img = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+    tokens = run_paddle_ocr(cv_img)
     if not tokens:
         return []
 

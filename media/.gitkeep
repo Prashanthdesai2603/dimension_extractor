@@ -1,7 +1,0 @@
-# This folder stores uploaded PDF drawings and processed annotated images.
-# Subdirectories:
-#   drawings/   - Original uploaded PDF files
-#   processed/  - OCR-annotated images with bounding boxes
-#   annotated_drawings/ - Annotated drawings with bounding boxes
-#   extracted_dimensions/ - Extracted dimensions
-#   .env - Environment variables    
