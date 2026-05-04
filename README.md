@@ -1,91 +1,127 @@
-# 📐 Engineering Drawing Dimension Extractor (Full Guide)
+# 📐 Engineering Drawing Dimension Extractor
 
-Welcome to the **Dimension Extractor** project. This is a production-grade internal tool designed to automate the extraction of dimensional data (Values, Units, Tolerances) from engineering drawings (PDFs/Scans).
-
-> [!TIP]
-> **View the Premium Guide**: For a better visual experience, open [Project_Explanation.html](Project_Explanation.html) in your browser.
+Welcome to the **Dimension Extractor** project. This tool automates the extraction of dimensional data (Values, Units, Tolerances) from engineering drawings (PDFs/Scans) using a hybrid approach of Vector Parsing and Local AI (PaddleOCR/docTR).
 
 ---
 
-## 🚀 1. The Core Objective (Start-to-End)
-Manual data entry from drawings is slow and error-prone. This tool provides a **5-step automated journey**:
-1.  **Upload**: User drops a PDF into the React portal.
-2.  **Detection**: The backend runs a **Hybrid Pipeline** (Vector Parsing or docTR OCR) to find potential dimensions.
-3.  **Refine**: User interacts with a Konva.js canvas to adjust, add, or delete red bounding boxes.
-4.  **Extract**: The backend crops these specific boxes and runs a high-focus OCR to get the text.
-5.  **Export**: The text is parsed into structured chunks (Nominal, Upper Tol, Lower Tol) and exported as a `.txt` report.
+## 🚀 1. The Core Objective
+This tool provides a professional workflow for technical data extraction:
+1.  **Upload**: Upload a PDF via the React portal.
+2.  **Detection**: Backend runs a Hybrid Pipeline to suggest initial dimension locations.
+3.  **Refine**: Use the interactive Konva.js canvas to adjust or add red bounding boxes.
+4.  **Extract**: Backend crops these specific regions and runs high-precision OCR.
+5.  **Export**: Data is parsed into structured fields and exported as a `.txt` report.
 
 ---
 
-## 🛠️ 2. Technology Stack & Dependencies
-
-### 🐍 Backend (Python / Django)
-| Dependency | Why & What is it used for? |
-| :--- | :--- |
-| **Django 4.2** | The "Skeleton". Handles the API, file storage (Media), and database interactions. |
-| **docTR** | The "Eyes". A deep learning OCR engine that reads text from image pixels with high accuracy. |
-| **OpenCV** | The "Scalpel". Used to crop specific regions from the drawing for targeted processing. |
-| **PyMuPDF (fitz)** | The "Perfect Reader". Directly extracts native text from CAD-generated PDFs with 100% precision. |
-| **pdf2image** | The "Bridge". Converts PDF pages into high-bitrate images so they can be viewed in browsers. |
-| **mysqlclient** | The "Memory". Connects Django to the MySQL database for persistent storage. |
-
-### ⚛️ Frontend (React / JavaScript)
-| Dependency | Why & What is it used for? |
-| :--- | :--- |
-| **React 18** | The "State". Manages the complex multi-step user flow without page reloads. |
-| **Konva / React-Konva** | The "Canvas". Allows drawing/moving red rectangles over the PDF image in real-time. |
-| **Axios** | The "Messenger". Handles all HTTP communication between the Frontend and Backend. |
-| **Bootstrap 5** | The "Style". Provides the layout components for a professional, responsive look. |
+## 🛠️ 2. Technology Stack
+*   **Backend**: Django 4.2 (Python), PaddleOCR, docTR, OpenCV, PyMuPDF.
+*   **Frontend**: React 18, Konva.js (Canvas API), Axios, Bootstrap 5.
+*   **Database**: MySQL.
 
 ---
 
-## 📂 3. Exhaustive File Breakdown
+## 💻 3. Setup from Scratch (GitHub Clone)
 
-### 📂 `backend/services/` (The Logic Layer)
-- `pipeline.py`: The Main Brain. Decides which tool (Vector vs OCR) to use for a specific file.
-- `vector_engine.py`: Specialized code to read "hidden" text inside digital PDFs.
-- `doctr_engine.py`: Loads the AI models and processes the image pixels.
-- `grouping_engine.py`: Joins broken text tokens (e.g., if "20" and ".5" are separate, it makes "20.5").
-- `tolerance_parser.py`: Uses complex "Regex" patterns to split "50 ±0.1" into three data fields.
-- `bbox_detector.py`: Scans the whole page to suggest where dimensions might be.
-- `extractor.py`: Handles the final "Crop and Read" logic for user-adjusted boxes.
+Follow these steps to set up the project on a new system.
 
-### 📂 `backend/extractor/` (The API Layer)
-- `views.py`: Defines the URL endpoints (`/api/upload`, `/api/process`, etc.) that the frontend calls.
-- `models.py`: Defines the `UploadedDrawing` table in the database.
-- `serializers.py`: Converts database rows into JSON format for the web browser.
+### 📋 Prerequisites
+*   **Python**: 3.10 or higher.
+*   **Node.js**: 18.x or higher.
+*   **MySQL**: Installed and running.
+*   **Poppler**: Required for `pdf2image`. 
+    *   *Windows*: Download from [GitHub](https://github.com/oschwartz10612/poppler-windows/releases) and add the `bin` folder to your System PATH.
+    *   *Linux*: `sudo apt-get install poppler-utils`.
 
-### 📂 `frontend/src/` (The User Layer)
-- `App.jsx`: Global controller managing the Upload -> Process -> Result state.
-- `api.js`: Configuration for all backend API calls.
-- `components/DrawingViewer/`: Contains the logic for the interactive Konva canvas.
-- `components/ProcessSection.jsx`: The UI for the "Detecting..." phase with progress indicators.
+### 📂 Step 1: Clone the Repository
+```bash
+git clone <your-repository-url>
+cd dimension_extractor
+```
+
+### 🗄️ Step 2: Database Setup
+1. Open your MySQL terminal or GUI (like Workbench).
+2. Create a new database:
+   ```sql
+   CREATE DATABASE dimension_db;
+   ```
+
+### 🐍 Step 3: Backend Configuration
+1. Navigate to the backend folder:
+   ```bash
+   cd backend
+   ```
+2. Create a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+4. Configure environment variables:
+   *   Create a `.env` file in the `backend/` directory.
+   *   Copy the following and update with your MySQL credentials:
+   ```env
+   SECRET_KEY=your-secret-key
+   DEBUG=True
+   DB_NAME=dimension_db
+   DB_USER=your_username
+   DB_PASSWORD=your_password
+   DB_HOST=localhost
+   DB_PORT=3306
+   ```
+5. Run migrations:
+   ```bash
+   python manage.py makemigrations
+   python manage.py migrate
+   ```
+6. Start the server:
+   ```bash
+   python manage.py runserver
+   ```
+
+### ⚛️ Step 4: Frontend Configuration
+1. Open a new terminal and navigate to the frontend folder:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the React app:
+   ```bash
+   npm start
+   ```
 
 ---
 
-## 🔄 4. How the "Magic" Works (The Processing Flow)
+## 📂 4. Project Structure
+*   `backend/services/`: Contains the OCR logic, vector engines, and parsing heuristics.
+*   `backend/extractor/`: Django app handling API endpoints and database models.
+*   `frontend/src/components/`: React components for the interactive drawing viewer.
 
+---
+
+## 🔄 5. Processing Flow
 ```mermaid
 graph TD
     A[User Uploads PDF] --> B{Is it a Vector PDF?}
     B -- Yes --> C[PyMuPDF Vector Extraction]
-    B -- No --> D[docTR Deep Learning OCR]
+    B -- No --> D[PaddleOCR Local AI Engine]
     C --> E[Spatial Grouping Engine]
     D --> E
     E --> F[Heuristic Noise Filter]
     F --> G[Display Boxes in React Canvas]
     G --> H[User Refines Boxes]
     H --> I[OpenCV Targeted Crop]
-    I --> J[Text Parsing & Tolerance Logic]
-    J --> K[Generate Final .txt Export]
+    I --> J[Paddle Multi-Orientation OCR]
+    J --> K[Regex Parsing & Tolerance Logic]
+    K --> L[Generate Final .txt Export]
 ```
 
 ---
-
-## 🚀 5. Getting Started
-1.  **Backend**: `cd backend && pip install -r requirements.txt && python manage.py runserver`
-2.  **Frontend**: `cd frontend && npm install && npm start`
-3.  **Database**: Ensure MySQL is running and credentials are set in `backend/.env`.
-
----
-*Created for the Engineering Intelligence Team.*
+*Updated: May 2026*  
+*This project is optimized for local execution without cloud dependencies (Google Vision/Gemini).*

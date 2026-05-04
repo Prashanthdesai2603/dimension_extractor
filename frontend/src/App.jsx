@@ -173,7 +173,6 @@ const App = () => {
                             <div className="header-subtitle">Engineering Drawing Intelligence</div>
                         </div>
                     </div>
-                    <div className="header-badge">Ver 3.0 Interactive</div>
                 </div>
             </header>
 
