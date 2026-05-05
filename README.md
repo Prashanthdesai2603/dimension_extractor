@@ -125,3 +125,7 @@ graph TD
 ---
 *Updated: May 2026*  
 *This project is optimized for local execution without cloud dependencies (Google Vision/Gemini).*
+
+
+
+
