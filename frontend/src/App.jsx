@@ -236,22 +236,6 @@ const App = () => {
                                             🔍 Detect Dimensions
                                         </button>
                                         <button
-                                            className="btn-info-custom"
-                                            onClick={() => handleExtractContent('horizontal')}
-                                            disabled={isDetecting || isExtracting || (detectedBoxes && detectedBoxes.length === 0)}
-                                            title="Extract only horizontal dimensions with 100% precision"
-                                        >
-                                            ↔ Horizontal
-                                        </button>
-                                        <button
-                                            className="btn-info-custom"
-                                            onClick={() => handleExtractContent('vertical')}
-                                            disabled={isDetecting || isExtracting || (detectedBoxes && detectedBoxes.length === 0)}
-                                            title="Extract only vertical dimensions with 100% precision"
-                                        >
-                                            ↕ Vertical
-                                        </button>
-                                        <button
                                             className={`btn-secondary-custom ${manualSelectionMode ? 'btn-manual-active' : ''}`}
                                             onClick={toggleManualSelection}
                                             disabled={isDetecting || isExtracting}

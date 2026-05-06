@@ -1,34 +1,20 @@
-# Python / Django
+# Virtual environments
+venv/
+menv/
+
+# Python
 __pycache__/
-*.py[cod]
-*$py.class
-backend/.env
-backend/db.sqlite3
-backend/media/
-backend/static/
-backend/doctr_out.txt
-backend/doctr_out_proper.txt
-backend/test_grouping_out.txt
-backend/.git/
+*.pyc
 
-# Node / React
-frontend/node_modules/
-frontend/build/
-frontend/dist/
-frontend/.env.local
-frontend/.env.development.local
-frontend/.env.test.local
-frontend/.env.production.local
-frontend/npm-debug.log*
-frontend/yarn-debug.log*
-frontend/yarn-error.log*
+# Node
+node_modules/
 
-# OS
-.DS_Store
-Thumbs.db
+# Django
+db.sqlite3
+media/
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
+# AI models
+runs/
+
+# Environment
+.env

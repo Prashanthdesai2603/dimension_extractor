@@ -21,11 +21,19 @@ const InteractiveRect = ({ shapeProps, isSelected, isHighlighted, onSelect, onCh
     }, [isSelected]);
 
     const isVertical = shapeProps.vertical;
-    const strokeColor = isHighlighted
+    const confidence = shapeProps.confidence || 1.0;
+    
+    // Step 11: color low-confidence boxes differently
+    let strokeColor = isHighlighted
         ? '#ff3333'
         : isSelected
             ? '#ffdd57'
             : isVertical ? '#39c5cf' : '#1f6feb';
+    
+    if (!isSelected && !isHighlighted && confidence < 0.6) {
+        strokeColor = '#f0883e'; // Orange for low confidence
+    }
+
     const fillColor = isHighlighted
         ? 'rgba(255, 51, 51, 0.25)'
         : isVertical
@@ -53,10 +61,6 @@ const InteractiveRect = ({ shapeProps, isSelected, isHighlighted, onSelect, onCh
                     const scaleY = node.scaleY();
                     node.scaleX(1);
                     node.scaleY(1);
-
-                    // For groups, we might need to handle Rect size vs Group scale
-                    // but for simplicity in this workflow, keeping Rect width/height in shapeProps
-                    // and updating them here.
                     onChange({
                         ...shapeProps,
                         x: node.x(),
@@ -83,22 +87,29 @@ const InteractiveRect = ({ shapeProps, isSelected, isHighlighted, onSelect, onCh
                     shadowOpacity={0.6}
                 />
 
+                {/* Step 11: show extracted value near rectangle */}
+                {(shapeProps.dim || shapeProps.text) && (
+                    <Text
+                        text={shapeProps.dim || shapeProps.text}
+                        x={0}
+                        y={shapeProps.height + 4}
+                        fontSize={11}
+                        fontStyle="bold"
+                        fill={strokeColor}
+                        align="left"
+                    />
+                )}
+
                 {shapeProps.serial && (
                     <Group
                         x={shapeProps.width + 2}
                         y={-2}
                     >
-                        {/* Ensure circle doesn't rotate with group or does it? 
-                            In nested group, it will rotate. This is usually what's wanted for engineering balloons. */}
                         <Circle
                             radius={10}
                             fill="white"
                             stroke="#333"
                             strokeWidth={1.5}
-                            shadowColor="black"
-                            shadowBlur={3}
-                            shadowOpacity={0.2}
-                            shadowOffset={{ x: 1, y: 1 }}
                         />
                         <Text
                             text={shapeProps.serial.toString()}
