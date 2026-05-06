@@ -1,6 +1,6 @@
 # 📐 Engineering Drawing Dimension Extractor
 
-Welcome to the **Dimension Extractor** project. This tool automates the extraction of dimensional data (Values, Units, Tolerances) from engineering drawings (PDFs/Scans) using a high-precision pipeline powered by **YOLOv8** and **PaddleOCR**.
+Welcome to the **Dimension Extractor** project. This tool automates the extraction of dimensional data (Values, Units, Tolerances) from engineering drawings (PDFs/Scans) using a high-precision pipeline powered by **DocTR** and **PaddleOCR**.
 
 ---
 
