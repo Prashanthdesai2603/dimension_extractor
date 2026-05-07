@@ -5,15 +5,24 @@ def normalize_ocr_text(text: str) -> str:
     Step 9: OCR Error Correction
     Normalize text: Replace '9' between numbers with '±', '4' with '±', 'O' with '0'.
     """
-    # Replace 'O' or 'o' with '0'
+    # 1. Handle Degree symbol misreads (often 'o' or '*' or '0' at the end of a number)
+    # 10o -> 10°
+    text = re.sub(r'(\d)\s*[o*]', r'\1°', text)
+    
+    # 2. Replace 'O' or remaining 'o' with '0'
     text = text.replace('O', '0').replace('o', '0')
     
-    # Replace symbols like '+/-', '+-', '±-', '±'
+    # 3. Standardize diameter symbols to 'Ø'
+    diag_symbols = ['⌀', 'Φ', 'φ', 'ø']
+    for sym in diag_symbols:
+        text = text.replace(sym, 'Ø')
+
+    # 4. Replace symbols like '+/-', '+-', '±-', '±'
     variants = ['+/-', '+ / -', '+ -', '+-', '±-', '± -']
     for v in variants:
         text = text.replace(v, '±')
 
-    # Replace '9' or '4' with '±' when it appears between digits or looks like a separator
+    # 5. Replace '9' or '4' with '±' when it appears between digits or looks like a separator
     # e.g., 10.5 9 0.2 -> 10.5 ± 0.2
     text = re.sub(r'(\d)\s*[94]\s*(\d)', r'\1±\2', text)
     
@@ -55,12 +64,13 @@ def parse_tolerance(text: str) -> dict:
 
     # 4. Preserve Prefix (Ø, R, M, and variants like 2XR)
     # Support patterns like 2XR1.0, Ø18, R32.0
-    prefix_match = re.match(r'^(\d*[X]?[ØRΦøM])', raw_text)
+    prefix_match = re.match(r'^(\d*[X]?[ØRΦø⌀φM])', raw_text)
     prefix = prefix_match.group(1) if prefix_match else ""
     if prefix:
         raw_text = raw_text[len(prefix):].strip()
 
-    num_regex = r'(\d+(?:\.\d+)?)'
+    # Update num_regex to optionally include degree symbol
+    num_regex = r'(\d+(?:\.\d+)?\s*°?)'
     
     # ----------------------------------------------------------------
     # A. ± pattern: 10 ± 0.2

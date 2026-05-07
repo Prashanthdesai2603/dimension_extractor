@@ -6,6 +6,7 @@ from pdf2image import convert_from_path
 from .doctr_detector import detect_dimension_boxes
 from .paddle_engine import run_multi_pass_ocr
 from .tolerance_parser import parse_tolerance, normalize_ocr_text, format_structured_dimension
+from .symbol_detector import run_advanced_ocr_pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +49,8 @@ def process_drawing(pdf_path: str, output_image_path: str) -> dict:
             if crop_img.size == 0:
                 continue
                 
-            # Step 7 & 8: Run improved multi-pass OCR
-            text, conf = run_multi_pass_ocr(crop_img)
+            # Step 7, 8, 9: Run advanced OCR with Symbol Helper Models
+            text, conf = run_advanced_ocr_pipeline(crop_img)
             
             if not text:
                 continue
@@ -82,7 +83,7 @@ def process_drawing(pdf_path: str, output_image_path: str) -> dict:
             'success': True,
             'dimensions': output_dims,
             'valid_dimensions': len(valid_dimensions),
-            'method': "docTR + PaddleOCR",
+            'method': "docTR + PaddleOCR + SymbolHelper",
             'error': None
         }
 

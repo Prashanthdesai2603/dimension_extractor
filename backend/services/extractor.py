@@ -5,6 +5,7 @@ from pdf2image import convert_from_path
 import logging
 from .paddle_engine import run_multi_pass_ocr
 from .tolerance_parser import parse_tolerance
+from .symbol_detector import run_advanced_ocr_pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -61,12 +62,12 @@ def extract_dimensions_from_bboxes(pdf_path: str, rectangles: list, viewer_conte
             if crop.size == 0:
                 continue
 
-            # 2. OCR with Multi-Pass (Step 7 & 8)
-            # This now handles contrast and rotation internally
-            raw_text, conf = run_multi_pass_ocr(crop)
+            # 2. OCR with Advanced Pipeline (Step 7, 8, 9)
+            # Includes multi-pass OCR (Sharpen, Threshold) + Symbol Correction
+            corrected_text, conf = run_advanced_ocr_pipeline(crop)
             
             # 3. Parse with upgraded tolerance_parser (Step 9)
-            parsed = parse_tolerance(raw_text)
+            parsed = parse_tolerance(corrected_text)
             
             results.append({
                 'id': rect_id,
@@ -75,8 +76,9 @@ def extract_dimensions_from_bboxes(pdf_path: str, rectangles: list, viewer_conte
                 'utol': parsed.get('utol', '0'),
                 'ltol': parsed.get('ltol', '0'),
                 'confidence': float(conf),
-                'original': raw_text,
-                'method': 'paddle_ocr_multi_pass',
+                'original': corrected_text, # Using corrected as the base
+                'corrected': corrected_text,
+                'method': 'paddle_ocr_with_symbol_helper',
                 'is_manual': rect.get('method') == 'manual' or rect.get('is_manual', False)
             })
 
